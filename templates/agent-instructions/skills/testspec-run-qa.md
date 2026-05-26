@@ -1,0 +1,338 @@
+# testspec-run-qa
+
+Agente de execução de testes QA. Lê um run plan `.md`, executa o script de teste, coleta logs via MCP (k8s/Splunk), analisa dados do banco via MCP, gera relatório consolidado e publica no Confluence via MCP.
+
+## Quando usar
+
+Após `/testspec-apply-qa` ter gerado os scripts e seus run plans `.md`.
+
+---
+
+## Instructions
+
+### 0. Ler arquivos globais do projeto QA (SEMPRE, primeiro passo)
+
+Leia **ambos** em paralelo — são obrigatórios:
+
+**`./testspec/instructions.md`**
+- Contém: MCPs disponíveis, credenciais de ambiente, URLs base, namespaces k8s, espaço Confluence, padrões do projeto
+- **Esta é a fonte de configuração do agente** — leia com atenção antes de qualquer ação
+
+**`./testspec/current-feature.md`**
+- Contém: nome da feature em foco
+- Se preenchido, pule a etapa de seleção de feature (passo 1)
+- Se vazio, execute o passo 1
+
+---
+
+### 1. Identificar a feature
+
+**Se argumento passado:** use diretamente como nome da feature.
+
+**Se `current-feature.md` preenchido:** use o nome registrado — pule para o passo 2.
+
+**Se nenhum dos dois:** liste os diretórios em `./src/test/features/` e pergunte via **AskUserQuestion** (single select):
+> "Qual feature deseja executar os testes?"
+
+**Após identificar:** escreva o nome em `./testspec/current-feature.md`.
+
+---
+
+### 2. Listar run plans disponíveis
+
+Varra recursivamente `./src/test/features/{feature-name}/` buscando arquivos `.md` (excluindo subdiretórios sem `.md`).
+
+Monte a lista agrupada por categoria:
+
+```
+E2E:
+  [ ] src/test/features/{feature-name}/e2e/k6-e2e-create-order-success.md
+  [ ] src/test/features/{feature-name}/e2e/k6-e2e-create-order-bad-request-zero-value.md
+
+Load:
+  [ ] src/test/features/{feature-name}/load/k6-load-create-order-success-100-rps-5min.md
+  [ ] src/test/features/{feature-name}/load/k6-load-create-order-success-1000-rps-5min.md
+
+Chaos:
+  [ ] src/test/features/{feature-name}/chaos-engineering/k6-dr-create-order-success-shutdown-pods.md
+```
+
+Se não houver nenhum `.md`, informe e encerre:
+```
+Nenhum run plan encontrado em src/test/features/{feature-name}/.
+Execute /testspec-apply-qa primeiro.
+```
+
+---
+
+### 3. Selecionar run plan(s) a executar
+
+Use **AskUserQuestion** (multi select) com a lista montada no passo 2:
+> "Quais run plans deseja executar agora?"
+
+Opções adicionais fixas (sempre presentes):
+- **Todos os E2E** — executa todos os `.md` da pasta `e2e/`
+- **Todos os Load** — executa todos os `.md` da pasta `load/`
+- **Todos (E2E + Load + Chaos)** — executa tudo
+
+Registre a lista final de run plans selecionados — execute-os **em sequência**, um por vez.
+
+---
+
+### 4. Para cada run plan selecionado — ciclo de execução
+
+Repita os passos 4a a 4f para cada `.md` selecionado.
+
+---
+
+#### 4a. Ler o run plan
+
+Leia o arquivo `.md` e extraia:
+- **Script** — caminho do arquivo de teste (`.js`, `.scala`, etc.)
+- **Ferramenta** — k6, Gatling, etc.
+- **Comando** — comando base de execução
+- **Variáveis de ambiente** — lista de `__ENV.*` necessárias
+- **Coleta de Logs** — fonte (k8s e/ou Splunk), namespace, pod selector, query, janela de tempo
+- **Análise de Banco** — tabela e queries SQL
+- **Relatório** — seções esperadas
+- **Publicação** — espaço Confluence, página pai, título
+
+---
+
+#### 4b. Validar pré-condições
+
+Antes de executar, verifique:
+
+- [ ] O arquivo de script existe no caminho indicado pelo run plan
+- [ ] Todas as variáveis de ambiente obrigatórias estão definidas (leia de `instructions.md` ou ambiente)
+- [ ] O MCP de banco está acessível (se o run plan exige análise de banco)
+- [ ] O MCP do Confluence está acessível (se o run plan exige publicação)
+
+Se qualquer pré-condição falhar, informe o problema específico e pergunte via **AskUserQuestion**:
+- **Continuar mesmo assim** — executa e documenta a limitação no relatório
+- **Cancelar** — encerra este run plan e passa para o próximo
+
+---
+
+#### 4c. Executar o script de teste
+
+Execute o script conforme a ferramenta:
+
+**k6:**
+```bash
+BASE_URL={url_base} {outras_env_vars} k6 run {caminho_do_script}
+```
+
+**Gatling:**
+```bash
+{GATLING_HOME}/bin/gatling.sh -sf {caminho_do_script}
+```
+
+Registre:
+- **Hora de início** (`start_time`)
+- **Hora de fim** (`end_time`)
+- **Duração total**
+- **Saída completa do stdout/stderr** — capture tudo
+- **Métricas extraídas da saída:**
+  - k6: `http_req_duration` (p50, p95, p99), `http_req_failed` (rate), `iterations`, `vus_max`
+  - Gatling: `response time` (mean, p95, p99), `requests/s`, `errors`
+- **Status final:** `PASSED` se exit code = 0 e thresholds atendidos; `FAILED` caso contrário
+
+---
+
+#### 4d. Coletar logs
+
+Execute **em paralelo** todas as fontes de log definidas no run plan.
+
+**k8s (se configurado em `instructions.md`):**
+
+```bash
+kubectl logs -n {namespace} -l {pod_selector} --since-time={start_time} --until-time={end_time}
+```
+
+- Se kubectl não disponível via Bash, use o MCP de k8s configurado em `instructions.md`
+- Filtre as linhas relevantes: erros, warnings, stack traces, linhas com o request ID ou correlation ID do teste
+- Registre: total de linhas capturadas, linhas de erro encontradas
+
+**Splunk (se configurado em `instructions.md`):**
+
+- Execute a query definida no run plan com a janela `start_time` a `end_time`
+- Use o MCP do Splunk configurado em `instructions.md`
+- Registre: total de eventos, eventos de erro, sample dos 5 mais relevantes
+
+Se uma fonte não estiver disponível: registre `"fonte indisponível"` no relatório — não encerre a execução.
+
+---
+
+#### 4e. Analisar banco de dados
+
+Execute cada query definida na seção `## Análise de Banco de Dados` do run plan.
+
+Use o MCP de banco configurado em `instructions.md` (PostgreSQL, Oracle, etc.).
+
+Para cada query:
+- Execute e capture o resultado
+- Compare com o critério esperado definido no run plan
+- Registre: `PASSOU` / `FALHOU` com valor obtido vs esperado
+
+Se o MCP de banco não estiver disponível: registre `"banco indisponível"` — não bloqueie o relatório.
+
+---
+
+#### 4f. Gerar o relatório
+
+Monte o relatório em Markdown com as seguintes seções obrigatórias:
+
+```markdown
+# QA Report — {feature-name} — {script-name} — {YYYY-MM-DD HH:mm}
+
+## Resumo
+
+| Campo           | Valor                          |
+|-----------------|--------------------------------|
+| Feature         | {feature-name}                 |
+| Script          | {script-name}.js               |
+| Ferramenta      | {k6 | Gatling}                 |
+| Início          | {start_time}                   |
+| Fim             | {end_time}                     |
+| Duração         | {duração}                      |
+| Status Final    | ✅ PASSED / ❌ FAILED           |
+
+## Métricas de Execução
+
+{tabela com p50/p95/p99, error rate, RPS, VUs — valores reais da saída do script}
+
+## Critérios de Aceite
+
+| # | Critério                                | Esperado       | Obtido         | Status |
+|---|-----------------------------------------|----------------|----------------|--------|
+| 1 | {critério do run plan}                  | {valor esp.}   | {valor obt.}   | ✅/❌  |
+| N | ...                                     | ...            | ...            | ...    |
+
+## Logs — k8s
+
+- **Linhas capturadas:** {N}
+- **Erros encontrados:** {N}
+
+```
+{amostra das linhas mais relevantes — máximo 20 linhas}
+```
+
+## Logs — Splunk
+
+- **Eventos:** {N}
+- **Erros:** {N}
+
+```
+{amostra dos 5 eventos mais relevantes}
+```
+
+## Análise de Banco de Dados
+
+| Query                          | Esperado | Obtido | Status |
+|-------------------------------|----------|--------|--------|
+| {query resumida}               | {val}    | {val}  | ✅/❌  |
+
+## Saída do Script (stdout)
+
+<details>
+<summary>Expandir saída completa</summary>
+
+```
+{stdout completo do script}
+```
+
+</details>
+
+## Conclusão
+
+**Resultado:** ✅ APROVADO / ❌ REPROVADO
+
+{2-3 linhas explicando o resultado. Se reprovado: qual critério falhou, valor obtido vs esperado, e recomendação de ação.}
+```
+
+---
+
+#### 4g. Publicar no Confluence
+
+Use o MCP do Confluence configurado em `instructions.md`.
+
+- **Espaço:** conforme run plan
+- **Página pai:** conforme run plan
+- **Título:** `QA Report — {feature-name} — {script-name} — {YYYY-MM-DD}`
+- **Ação:** se já existe página com o mesmo título → atualizar; caso contrário → criar
+- **Conteúdo:** o relatório gerado no passo 4f (converter Markdown para formato Confluence se necessário)
+
+Após publicar: exiba a URL da página criada/atualizada.
+
+Se Confluence indisponível: salve o relatório localmente em:
+```
+./reports/{feature-name}/{script-name}-{YYYY-MM-DD-HHmm}.md
+```
+E informe o usuário com o caminho do arquivo.
+
+---
+
+#### 4h. Reportar progresso do run plan
+
+Após concluir cada run plan:
+
+```
+──────────────────────────────────────────────────
+Run Plan: {script-name}.md
+Status:   ✅ PASSED / ❌ FAILED
+Duração:  {X}s
+Métricas: p95={X}ms | errors={X}% | RPS={X}
+Banco:    ✅ {N}/{N} queries OK / ❌ {N} falha(s)
+Logs:     k8s={N} linhas | Splunk={N} eventos
+Confluence: {URL da página} / salvo em {path}
+──────────────────────────────────────────────────
+```
+
+---
+
+### 5. Relatório consolidado final
+
+Após executar todos os run plans selecionados:
+
+```
+══════════════════════════════════════════════════
+EXECUÇÃO CONCLUÍDA — {feature-name}
+══════════════════════════════════════════════════
+
+Run plans executados: {N}
+  ✅ PASSED: {N}
+  ❌ FAILED: {N}
+
+Detalhes:
+  ✅ k6-e2e-create-order-success          p95=120ms  errors=0%
+  ❌ k6-e2e-create-order-bad-request      status=200 (esperado 400)
+  ✅ k6-load-create-order-100-rps-5min    p95=310ms  errors=0.1%
+
+Relatórios publicados no Confluence:
+  - {URL 1}
+  - {URL 2}
+
+Relatórios salvos localmente (Confluence indisponível):
+  - {path} (se aplicável)
+
+Próximos passos:
+  - Investigar falhas: {lista de run plans com FAILED}
+  - Re-executar: /testspec-run-qa {feature-name}
+══════════════════════════════════════════════════
+```
+
+---
+
+## Guardrails
+
+- **`instructions.md` é a fonte de configuração de todos os MCPs** — nunca assuma URLs, namespaces, credenciais ou espaços Confluence; leia de lá
+- **`current-feature.md` é escrito sempre** após identificar a feature — passo 1
+- **Execute um run plan por vez, em sequência** — não paralelize execuções de script; logs e métricas se misturariam
+- **Nunca cancele a suite por falha de um run plan** — continue os demais e reporte tudo no consolidado final
+- **Janela de coleta de logs** = `start_time` até `end_time` do script — nunca colete logs fora dessa janela
+- **Confluence indisponível não é erro fatal** — salve localmente e informe; não bloqueie o fluxo
+- **Banco indisponível não é erro fatal** — registre no relatório como `"indisponível"` e prossiga
+- **Nunca execute comandos destrutivos** ao coletar logs ou analisar banco — apenas `SELECT`, `kubectl logs`, queries de leitura
+- **Relatório sempre gerado mesmo se o script falhar** — o relatório de falha é tão importante quanto o de sucesso
+- **Saída completa do script** sempre capturada e incluída no relatório (dentro de `<details>`) — nunca truncar silenciosamente

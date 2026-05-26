@@ -1,0 +1,7 @@
+tests/
+coverage/
+.github/
+*.test.js
+vitest.config.js
+eslint.config.js
+.env*
