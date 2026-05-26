@@ -14,6 +14,18 @@ testspec installs 4 Claude Code slash commands that cover the full SDT lifecycle
 
 ---
 
+## Quick start
+
+```bash
+# install globally
+npm install -g @analizza-ai/testspec
+
+# in your project root (must have openspec/ or similar)
+testspec init       # detects SDD framework, selects AI agent, writes config
+``` 
+
+---
+
 ## Test pyramid
 
 <img width="521" height="478" alt="image" src="https://github.com/user-attachments/assets/a07d3ab0-8cd9-4746-b59a-bb8ea2773f63" />
