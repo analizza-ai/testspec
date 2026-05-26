@@ -13,15 +13,17 @@ testspec (SDT) inverts traditional test generation. Instead of writing code firs
 
 ## Test pyramid
 
+<img width="521" height="478" alt="image" src="https://github.com/user-attachments/assets/a07d3ab0-8cd9-4746-b59a-bb8ea2773f63" />
+
 ```
 ┌─────────────────────────────────────────────────┐
-│              CHAOS ENGINEERING                  │  ← /testspec-run-qa
+│              CHAOS ENGINEERING                  │  ← /testspec-speficy-qa ← /testspec-apply-qa ← /testspec-run-qa
 │         (resilience · DR · fault injection)     │
 ├─────────────────────────────────────────────────┤
-│               QA LAYER                          │  ← /testspec-apply-qa
+│               QA LAYER                          │  ← /testspec-speficy-qa ← /testspec-apply-qa ← /testspec-run-qa
 │     end-to-end tests · load tests (k6/Gatling)  │
 ├─────────────────────────────────────────────────┤
-│             DEVELOPER LAYER                     │  ← testspec generate
+│             DEVELOPER LAYER                     │  ← testspec-generate
 │   unit tests · integration tests (Testcontainers│
 │   PostgreSQL · Kafka · etc.)                    │
 └─────────────────────────────────────────────────┘
