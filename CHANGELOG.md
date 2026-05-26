@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `testspec init` — setup wizard for SDD framework + AI agent detection
-- `testspec generate` (alias `pags-tests`) — reads OpenSpec artifacts → writes `tests.md` + stubs
+- `testspec generate` — reads OpenSpec artifacts → writes `tests.md` + stubs
 - `testspec validate` — maps test run results back to CT-01..N pass/fail
 - `testspec report` — CT coverage/gap report
 - OpenSpec adapter (full implementation)

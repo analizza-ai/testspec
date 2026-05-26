@@ -75,7 +75,7 @@ export async function runInit() {
     mkdirSync(commandsDir, { recursive: true });
 
     const skills = [
-      'testspec-tests.md',
+      'testspec-generate.md',
       'testspec-specify-qa.md',
       'testspec-apply-qa.md',
       'testspec-run-qa.md',

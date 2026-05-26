@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * bin/cli.js
- * Entry point for the testspec CLI. Registers all commands and the pags-tests alias.
+ * Entry point for the testspec CLI.
  */
 
 import { program } from 'commander';
@@ -27,9 +27,9 @@ program.addCommand(generateCommand);
 program.addCommand(validateCommand);
 program.addCommand(reportCommand);
 
-// alias: pags-tests → generate
+// alias: testspec-generate → generate
 program
-  .command('pags-tests')
+  .command('testspec-generate')
   .description('Alias for "generate" — reads specs → writes tests.md + stubs')
   .option('-c, --change <name>', 'target a specific change folder')
   .option('--api', 'call Claude API instead of printing prompt to chat')

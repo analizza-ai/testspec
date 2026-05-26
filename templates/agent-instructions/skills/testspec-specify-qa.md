@@ -4,7 +4,7 @@ Inicia a especificação técnica de testes QA para uma feature, buscando o `tes
 
 ## Quando usar
 
-Após `/testspec-tests` ter gerado o `tests.md` da feature no repositório do app.
+Após `/testspec-generate` ter gerado o `tests.md` da feature no repositório do app.
 
 ---
 
@@ -138,7 +138,7 @@ Se a feature foi encontrada apenas em `./testspec/` e o GitHub MCP está inacess
 - Se não existe: encerre informando:
   ```
   tests.md não encontrado via GitHub MCP.
-  Verifique o token GitHub ou execute /testspec-tests no repositório do app.
+  Verifique o token GitHub ou execute /testspec-generate no repositório do app.
   ```
 
 ---
@@ -531,5 +531,5 @@ Onde:
 - **Protocolo Kafka:** se o protocolo for Kafka (não HTTP), omitir seções HTTP, adaptar `{acao}` para `consume-{recurso}`, omitir `Location` header
 - **Location header:** se presente na resposta, SEMPRE incluir instrução de extração do ID nos critérios de aceite do CT de sucesso
 - **sequenceDescription:** se presente nas rules, SEMPRE gerar critério de ordem de operações no CT correspondente
-- **Próximo passo:** sempre referenciar `/testspec-apply-qa` — não existe `/pags-tasks-qa-tests`
+- **Próximo passo:** sempre referenciar `/testspec-apply-qa`
 - **Run plans:** sempre gerados pelo `/testspec-apply-qa` junto com cada script — não pergunte ao usuário, não condicione

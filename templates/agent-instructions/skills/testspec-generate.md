@@ -1,4 +1,4 @@
-# testspec-tests
+# testspec-generate
 
 Gera o arquivo `tests.md` para uma feature do openspec, consolidando todos os `spec.md` da feature e enriquecendo com critérios de aceite técnicos e genéricos de tecnologia.
 

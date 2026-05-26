@@ -1,6 +1,6 @@
-# /pags-tests — Spec Driven Test generation
+# /testspec-generate — Spec Driven Test generation
 
-Run `testspec generate` (or `testspec pags-tests`) to read the current SDD change and generate `tests.md` + test stubs.
+Run `testspec generate` to read the current SDD change and generate `tests.md` + test stubs.
 
 ## What this command does
 

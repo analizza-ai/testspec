@@ -4,8 +4,7 @@
   "description": "Spec Driven Test — the test layer for SDD",
   "type": "module",
   "bin": {
-    "testspec": "./bin/cli.js",
-    "pags-tests": "./bin/cli.js"
+    "testspec": "./bin/cli.js"
   },
   "main": "./src/index.js",
   "exports": {
@@ -40,6 +39,18 @@
     "url": "https://github.com/analizza-ai/testspec/issues"
   },
   "homepage": "https://github.com/analizza-ai/testspec#readme",
+  "files": [
+    "bin/",
+    "src/",
+    "templates/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "commander": "^12.0.0",
     "gray-matter": "^4.0.3",

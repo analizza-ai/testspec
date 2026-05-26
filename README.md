@@ -14,10 +14,10 @@ testspec (SDT) inverts traditional test generation. Instead of writing code firs
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              CHAOS ENGINEERING                  │  ← /pags-run-qa-tests
+│              CHAOS ENGINEERING                  │  ← /testspec-run-qa
 │         (resilience · DR · fault injection)     │
 ├─────────────────────────────────────────────────┤
-│               QA LAYER                          │  ← /pags-apply-qa-tests
+│               QA LAYER                          │  ← /testspec-apply-qa
 │     end-to-end tests · load tests (k6/Gatling)  │
 ├─────────────────────────────────────────────────┤
 │             DEVELOPER LAYER                     │  ← testspec generate

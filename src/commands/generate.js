@@ -1,7 +1,7 @@
 /**
  * src/commands/generate.js
  * Core command: reads SDD spec artifacts → builds tests.md + optional stubs.
- * Also registered as the "pags-tests" alias in bin/cli.js.
+ * Also registered as the "testspec-generate" alias in bin/cli.js.
  */
 
 import { Command } from 'commander';

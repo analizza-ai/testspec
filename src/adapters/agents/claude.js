@@ -19,7 +19,7 @@ export class ClaudeAdapter {
     const prompt = buildPrompt(specContext, config);
 
     if (!opts.useApi) {
-      log.info('\n─── Prompt for Claude Code (/pags-tests) ───────────────\n');
+      log.info('\n─── Prompt for Claude Code (/testspec-generate) ────────\n');
       console.log(prompt);
       log.info('\n────────────────────────────────────────────────────────\n');
       log.warn('Paste the output above into your Claude Code chat to get tests.md.');

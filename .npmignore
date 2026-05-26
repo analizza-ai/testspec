@@ -1,7 +1,11 @@
+node_modules/
 tests/
+docs/
 coverage/
 .github/
 *.test.js
 vitest.config.js
 eslint.config.js
 .env*
+.mcp.json
+package-lock.json
