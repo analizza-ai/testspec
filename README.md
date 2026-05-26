@@ -1,6 +1,7 @@
 # @analizza-ai/testspec
 
 [![npm](https://img.shields.io/npm/v/@analizza-ai/testspec)](https://www.npmjs.com/package/@analizza-ai/testspec)
+[![CI](https://github.com/analizza-ai/testspec/actions/workflows/ci.yml/badge.svg)](https://github.com/analizza-ai/testspec/actions/workflows/ci.yml)
 [![license](https://img.shields.io/npm/l/@analizza-ai/testspec)](./LICENSE)
 [![node](https://img.shields.io/node/v/@analizza-ai/testspec)](./package.json)
 
