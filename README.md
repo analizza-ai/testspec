@@ -45,57 +45,57 @@ flowchart TD
     IDEA --> PROPOSE
 
     subgraph OPENSPEC["OpenSpec — Spec-Driven Development (app repo)"]
-        PROPOSE["/opsx:propose\nDescribes what will be built"]
+        PROPOSE["/opsx propose - Describes what will be built"]
 
-        PROPOSE --> PROPOSAL["proposal.md\nIntent · Goals · Non-goals"]
-        PROPOSE --> SPECS["specs/{feature}/spec.md\nWhat the system must do"]
-        PROPOSE --> DESIGN["design.md\nHow — Architecture · Contracts · Decisions"]
+        PROPOSE --> PROPOSAL["proposal.md - Intent, Goals, Non-goals"]
+        PROPOSE --> SPECS["specs/feature/spec.md - What the system must do"]
+        PROPOSE --> DESIGN["design.md - Architecture, Contracts, Decisions"]
 
         PROPOSAL --> TESTS_CMD
         SPECS    --> TESTS_CMD
         DESIGN   --> TESTS_CMD
 
-        TESTS_CMD["/testspec-generate\nConsolidates specs and generates test cases"]
-        TESTS_CMD --> TESTS_MD["tests.md\nCT-01..N · Happy path · Business rules · DB"]
+        TESTS_CMD["/testspec-generate - Consolidates specs and generates test cases"]
+        TESTS_CMD --> TESTS_MD["tests.md - CT-01..N, Happy path, Business rules, DB"]
 
-        TESTS_MD --> TASKS["tasks.md\nTasks in chunks of up to 2h"]
+        TESTS_MD --> TASKS["tasks.md - Tasks in chunks of up to 2h"]
     end
 
     TASKS --> APPLY
 
     subgraph IMPL["Implementation (app repo)"]
-        APPLY["/opsx:apply\nExecutes tasks from the change"]
-        APPLY --> CODE["Code · Migrations · Integration tests"]
-        CODE --> VERIFY["Testcontainers\nPostgreSQL + Kafka"]
+        APPLY["/opsx apply - Executes tasks from the change"]
+        APPLY --> CODE["Code, Migrations, Integration tests"]
+        CODE --> VERIFY["Testcontainers - PostgreSQL + Kafka"]
     end
 
-    VERIFY --> ARCHIVE["/opsx:archive\nChange archived as complete"]
+    VERIFY --> ARCHIVE["/opsx archive - Change archived as complete"]
 
     ARCHIVE --> SPECIFY_QA
 
     subgraph QA["Autonomous QA (separate QA repo)"]
-        SPECIFY_QA["/testspec-specify-qa\nQuestionnaire: tool · types · technical contract"]
-        SPECIFY_QA --> SPEC_MD["spec.qa.md\nCT → k6/Gatling script mapping"]
-        SPECIFY_QA --> TASKS_MD["tasks.qa.md\nChecklist of scripts to implement"]
+        SPECIFY_QA["/testspec-specify-qa - Questionnaire: tool, types, technical contract"]
+        SPECIFY_QA --> SPEC_MD["spec.qa.md - CT to k6/Gatling script mapping"]
+        SPECIFY_QA --> TASKS_MD["tasks.qa.md - Checklist of scripts to implement"]
 
         TASKS_MD --> APPLY_QA
         SPEC_MD  --> APPLY_QA
 
-        APPLY_QA["/testspec-apply-qa\nGenerates scripts + run plans .md"]
-        APPLY_QA --> E2E["e2e/\nk6-e2e-{action}-{scenario}.js\nk6-e2e-{action}-{scenario}.md"]
-        APPLY_QA --> LOAD["load/\nk6-load-{action}-{scenario}-{rps}-rps-{dur}.js\nk6-load-{action}-{scenario}-{rps}-rps-{dur}.md"]
-        APPLY_QA --> CHAOS["chaos-engineering/\nk6-dr-{action}-{scenario}-{type}.js\nk6-dr-{action}-{scenario}-{type}.md"]
+        APPLY_QA["/testspec-apply-qa - Generates scripts and run plans"]
+        APPLY_QA --> E2E["e2e/ - k6-e2e-action-scenario.js + .md"]
+        APPLY_QA --> LOAD["load/ - k6-load-action-scenario-rps.js + .md"]
+        APPLY_QA --> CHAOS["chaos-engineering/ - k6-dr-action-scenario-type.js + .md"]
 
         E2E   --> RUN_QA
         LOAD  --> RUN_QA
         CHAOS --> RUN_QA
 
-        RUN_QA["/testspec-run-qa\nAI execution agent"]
-        RUN_QA --> EXEC["Runs script\nCaptures stdout · p95/p99/RPS metrics"]
-        EXEC   --> LOGS["Collects logs\nkubectl + Splunk via MCP"]
-        LOGS   --> DB["Analyzes DB\nSELECT via MCP DB"]
-        DB     --> REPORT["Generates Markdown report\nSummary · Metrics · Criteria · Logs · DB"]
-        REPORT --> CONFLUENCE["Publishes to Confluence via MCP\n(fallback: ./reports/ local)"]
+        RUN_QA["/testspec-run-qa - AI execution agent"]
+        RUN_QA --> EXEC["Runs script - Captures stdout, p95/p99/RPS metrics"]
+        EXEC   --> LOGS["Collects logs - kubectl + Splunk via MCP"]
+        LOGS   --> DB["Analyzes DB - SELECT via MCP DB"]
+        DB     --> REPORT["Generates Markdown report - Summary, Metrics, Criteria"]
+        REPORT --> CONFLUENCE["Publishes to Confluence via MCP"]
     end
 
     style OPENSPEC     fill:#1e1e2e,stroke:#cba6f7,color:#cdd6f4
