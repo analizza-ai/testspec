@@ -1,6 +1,6 @@
 {
   "name": "@analizza-ai/testspec",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Spec Driven Test — the test layer for SDD",
   "type": "module",
   "bin": {
