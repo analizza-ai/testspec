@@ -11,6 +11,8 @@ import { join } from 'path';
 import { log } from '../utils/logger.js';
 import { detectSdd } from '../utils/sdd-detector.js';
 
+const SDD_DIRS = { openspec: 'openspec', speckit: 'specs' };
+
 export const initCommand = new Command('init')
   .description('Setup wizard — SDD framework + AI agent + writes testspec.config.json')
   .action(runInit);
@@ -50,7 +52,7 @@ export async function runInit() {
 
   rl.close();
 
-  // Step 4: write testspec.config.json
+  // Step 4: write testspec.config.json inside the SDD framework folder
   const config = {
     sdd,
     agent,
@@ -61,40 +63,63 @@ export async function runInit() {
     chaosHints: true,
   };
 
-  writeFileSync(join(process.cwd(), 'testspec.config.json'), JSON.stringify(config, null, 2) + '\n');
-  log.success('testspec.config.json written');
+  const sddDir = SDD_DIRS[sdd] ?? sdd;
+  const configDir = join(process.cwd(), sddDir);
+  mkdirSync(configDir, { recursive: true });
+  const configPath = join(configDir, 'testspec.config.json');
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+  log.success(`${sddDir}/testspec.config.json written`);
 
   // Step 5: install agent instruction files
+  const { readFileSync } = await import('fs');
+  const { fileURLToPath } = await import('url');
+  const { dirname, join: pjoin } = await import('path');
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const skillsDir = pjoin(__dirname, '../../templates/agent-instructions/skills');
+
+  const skills = [
+    'testspec-generate',
+    'testspec-specify-qa',
+    'testspec-apply-qa',
+    'testspec-run-qa',
+  ];
+
   if (agent === 'claude') {
-    const { readFileSync } = await import('fs');
-    const { fileURLToPath } = await import('url');
-    const { dirname, join: pjoin } = await import('path');
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const skillsDir = pjoin(__dirname, '../../templates/agent-instructions/skills');
     const commandsDir = join(process.cwd(), '.claude', 'commands');
     mkdirSync(commandsDir, { recursive: true });
 
-    const skills = [
-      'testspec-generate.md',
-      'testspec-specify-qa.md',
-      'testspec-apply-qa.md',
-      'testspec-run-qa.md',
-    ];
     for (const skill of skills) {
-      const tpl = readFileSync(pjoin(skillsDir, skill), 'utf-8');
-      writeFileSync(join(commandsDir, skill), tpl);
-      log.success(`.claude/commands/${skill} written`);
+      const tpl = readFileSync(pjoin(skillsDir, skill, 'SKILL.md'), 'utf-8');
+      writeFileSync(join(commandsDir, `${skill}.md`), tpl);
+      log.success(`.claude/commands/${skill}.md written`);
     }
   } else {
-    const dir = join(process.cwd(), '.github');
-    mkdirSync(dir, { recursive: true });
-    const { readFileSync } = await import('fs');
-    const { fileURLToPath } = await import('url');
-    const { dirname, join: pjoin } = await import('path');
-    const __dirname = dirname(fileURLToPath(import.meta.url));
+    // global copilot instructions
+    const githubDir = join(process.cwd(), '.github');
+    mkdirSync(githubDir, { recursive: true });
     const tpl = readFileSync(pjoin(__dirname, '../../templates/agent-instructions/copilot.md'), 'utf-8');
-    writeFileSync(join(dir, 'copilot-instructions.md'), tpl);
+    writeFileSync(join(githubDir, 'copilot-instructions.md'), tpl);
     log.success('.github/copilot-instructions.md written');
+
+    // skills → .github/skills/{skill-name}/SKILL.md
+    for (const skill of skills) {
+      const skillTpl = readFileSync(pjoin(skillsDir, skill, 'SKILL.md'), 'utf-8');
+      const destDir = join(process.cwd(), '.github', 'skills', skill);
+      mkdirSync(destDir, { recursive: true });
+      writeFileSync(join(destDir, 'SKILL.md'), skillTpl);
+      log.success(`.github/skills/${skill}/SKILL.md written`);
+    }
+
+    // prompts → .github/prompts/{skill-name}.prompt.md  (slash commands)
+    const promptsTemplateDir = pjoin(__dirname, '../../templates/agent-instructions/prompts');
+    const promptsDir = join(process.cwd(), '.github', 'prompts');
+    mkdirSync(promptsDir, { recursive: true });
+
+    for (const skill of skills) {
+      const promptTpl = readFileSync(pjoin(promptsTemplateDir, `${skill}.prompt.md`), 'utf-8');
+      writeFileSync(join(promptsDir, `${skill}.prompt.md`), promptTpl);
+      log.success(`.github/prompts/${skill}.prompt.md written`);
+    }
   }
 
   log.info('\nSetup complete. Run: testspec generate');

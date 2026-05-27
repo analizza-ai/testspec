@@ -6,5 +6,5 @@
 export { parseSpecs } from './core/spec-parser.js';
 export { buildTests } from './core/tests-builder.js';
 export { generateStubs } from './core/stub-generator.js';
-export { loadConfig } from './utils/config.js';
+export { loadConfig, resolveConfigPath } from './utils/config.js';
 export { detectSdd } from './utils/sdd-detector.js';
